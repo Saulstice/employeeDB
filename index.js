@@ -62,6 +62,7 @@ function start() {
                     })
             }
             else if (data.start === "Add") {
+                // If user chooses to add to database
                 inquirer
                     .prompt([
                         {
@@ -89,6 +90,7 @@ function start() {
                     })
             }
             else if (data.start === "Update") {
+                //If user chooses to update DB
                 inquirer
                     .prompt([
                         {
@@ -102,7 +104,7 @@ function start() {
                             name: "update"
                         }
                     ]).then(function (data) {
-                        // Call function to show all departments if user chooses that option
+                        // Call update function that user chooses
                         if (data.update === "Update a department") {
                             updateDepartment();
                         }
@@ -112,8 +114,10 @@ function start() {
                         else if (data.update === "Update an employee") {
                             updateEmployee();
                         }
-
                     })
+            } 
+            else {
+                connection.end();
             }
         }
         );
@@ -130,6 +134,7 @@ function allDepartments() {
 
 // Function for if user chooses to view all roles
 function allRoles() {
+    //Build SQL query
     var query = "SELECT roles.role_id, roles.title, roles.salary, departments.department_name "
     query += "FROM roles LEFT JOIN departments ON roles.department_id = departments.department_id"
     connection.query(query, function (err, res) {
@@ -141,6 +146,7 @@ function allRoles() {
 
 // Function for if user chooses to view all employees
 function allEmployees() {
+    //Build SQL query
     var query = "SELECT employees.employee_id, employees.first_name, employees.last_name, roles.title, roles.salary, departments.department_name ";
     query += "FROM employees LEFT JOIN roles ON employees.role_id = roles.role_id LEFT JOIN departments ON roles.department_id = departments.department_id";
     connection.query(query, function (err, res) {
@@ -153,6 +159,7 @@ function allEmployees() {
 // Function to add new employee
 function addEmployee() {
     var roles = [];
+    //Build SQL query to get all role titles
     var query = "SELECT title FROM roles"
     connection.query(query, function (err, res) {
         if (err) throw err;
@@ -178,8 +185,10 @@ function addEmployee() {
                     name: "role"
                 }
             ]).then(function (data) {
+                //Build SQL query to find role_id
                 connection.query("SELECT role_id FROM roles WHERE roles.title = ?", [data.role], function (err, res) {
                     if (err) throw err;
+                    //SQL query to add employee into DB
                     connection.query("INSERT INTO employees SET ?", {
                         first_name: data.firstName,
                         last_name: data.lastName,
@@ -187,6 +196,7 @@ function addEmployee() {
                     }, function (err, res) {
                         if (err) throw err;
                         console.log("Employee added.");
+                        console.log("------------------------------------------");
                         start();
                     });
                 });
@@ -194,11 +204,14 @@ function addEmployee() {
     });
 }
 
+// Function to add new role
 function addRole() {
     var departments = [];
+    //Build SQL query to get all department names
     var query = "SELECT department_name FROM departments"
     connection.query(query, function (err, res) {
         if (err) throw err;
+        //put all department names into array
         res.forEach(department => {
             departments.push(department.department_name);
         });
@@ -221,8 +234,10 @@ function addRole() {
                     name: "department"
                 }
             ]).then(function (data) {
+                // Build SQL query to get department id for department user chose
                 connection.query("SELECT department_id FROM departments WHERE department_name = ?", [data.department], function (err, res) {
                     if (err) throw err;
+                    // SQL query to add new role
                     connection.query("INSERT INTO roles SET ?", {
                         title: data.title,
                         salary: data.salary,
@@ -247,6 +262,7 @@ function addDepartment() {
                 name: "name"
             }
         ]).then(function (data) {
+            // SQL query to add new department
             connection.query("INSERT INTO departments SET department_name = ?", [data.name], function (err, res) {
                 if (err) throw err;
                 console.log("Department added.");
@@ -258,6 +274,7 @@ function addDepartment() {
 
 function updateDepartment() {
     var departments = [];
+    //Build SQL query to get department names
     var query = "SELECT department_name FROM departments"
     connection.query(query, function (err, res) {
         if (err) throw err;
@@ -278,6 +295,7 @@ function updateDepartment() {
                     name: "newDepartment"
                 }
             ]).then(function (data) {
+                //Build SQL query to update department they chose
                 connection.query("UPDATE departments SET department_name = ? WHERE department_name = ?",
                     [data.newDepartment, data.oldDepartment], function (err, res) {
                         if (err) throw err;
@@ -291,6 +309,7 @@ function updateDepartment() {
 
 function updateRole() {
     var roles = [];
+    // SQL query to get all role titles
     var query = "SELECT title FROM roles"
     connection.query(query, function (err, res) {
         if (err) throw err;
@@ -311,6 +330,7 @@ function updateRole() {
                     name: "newRole"
                 }
             ]).then(function (data) {
+                // SQL query to update department user chose
                 connection.query("UPDATE departments SET department_name = ? WHERE department_name = ?",
                     [data.newRole, data.oldRole], function (err, res) {
                         if (err) throw err;
@@ -325,6 +345,7 @@ function updateRole() {
 function updateEmployee() {
     var employeeNames = [];
     var employees = [];
+    // Build SQL query to get employee info
     var query = "SELECT employee_id, first_name, last_name FROM employees"
     connection.query(query, function (err, res) {
         if (err) throw err;
@@ -333,8 +354,6 @@ function updateEmployee() {
             employeeNames.push(fullName);
             employees.push(employee.employee_id);
         });
-        console.log(employeeNames);
-        console.log(employees)
         inquirer
             .prompt([
                 {
@@ -366,8 +385,7 @@ function updateEmployee() {
                         parseInt(employeeID);
                     }
                 }
-                console.log(employeeID)
-                console.log(data.thisEmployee);
+                // SQL query to update employee user chose
                 connection.query(`UPDATE employees SET ${data.updateThis} = '${data.update}' WHERE employee_id = ${employeeID}`,
                     function (err, res) {
                         if (err) throw err;
